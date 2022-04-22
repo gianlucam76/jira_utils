@@ -10,19 +10,20 @@ import (
 	"k8s.io/klog/v2/klogr"
 )
 
-// Filed displays information about issues filed by user
+// Filed displays information about issues filed by user (by default user defined in env variable JIRA_USERNAME)
 func Filed(ctx context.Context, args []string) error {
 	doc := `Usage:
-	jira-utils show filed [--sprint=<name>|--active] [--project=<name>] [--board=<name>]
+	jira-utils show filed [--sprint=<name>|--active] [--project=<name>] [--board=<name>] [--username=<name>]
 Options:
   -h --help             Show this screen.
      --active           Show Jira issues in current active sprint.
+     --username=<name>  Show Jira issues for specified user (by default user defined in env variable JIRA_USERNAME)
      --sprint=<name>    Show Jira issues in current specified sprint.
      --project=<name>	Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
-     --board=<name>		Show Jira issues in current project/boardf (value in JIRA_BOARD will be used by default)
+     --board=<name>     Show Jira issues in current project/board (value in JIRA_BOARD will be used by default)
 
 Description:
-  The show filed command shows information about jira issues filed by user.
+  The show filed command shows information about jira issues filed by user (by default user defined in env variable JIRA_USERNAME)
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -38,6 +39,13 @@ Description:
 	}
 
 	logger := klogr.New()
+
+	username := ""
+	if passedUsername := parsedArgs["--username"]; passedUsername != nil {
+		username = passedUsername.(string)
+	} else {
+		username = jira.GetUsername(logger)
+	}
 
 	jiraClient, err := jira.GetJiraClient(ctx, jira.GetUsername(logger), jira.GetPassword(logger), logger)
 	if err != nil {
@@ -78,15 +86,15 @@ Description:
 			return fmt.Errorf("failed to get jira active sprint")
 		}
 		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed) and sprint = %s",
-			jira.GetUsername(logger), activeSprint.Name)
+			username, activeSprint.Name)
 	} else if sprintName != "" {
 		sprint, err := jira.GetJiraSprint(ctx, jiraClient, fmt.Sprintf("%d", board.ID), sprintName, logger)
 		if err != nil || sprint == nil {
 			return fmt.Errorf("%s", fmt.Sprintf("failed to get jira sprint %s", sprintName))
 		}
-		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed) and sprint = %s", jira.GetUsername(logger), sprintName)
+		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed) and sprint = %s", username, sprintName)
 	} else {
-		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed)", jira.GetUsername(logger))
+		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed)", username)
 	}
 	return jira.DisplayJiraIssues(ctx, jiraClient, jql, logger)
 }

@@ -233,7 +233,7 @@ func findExistingIssue(openIssues []jira.Issue, summary string) *jira.Issue {
 
 func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"KEY", "SUMMARY"})
+	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS"})
 	table.SetReflowDuringAutoWrap(false)
 	table.SetRowLine(true)
 
@@ -248,11 +248,16 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 
 	for i := range issues {
 		key := issues[i].Key
-		var summary string
+		var summary, status string
 		if issues[i].Fields != nil {
 			summary = issues[i].Fields.Summary
+			if issues[i].Fields.Status != nil {
+				status = issues[i].Fields.Status.Name
+			} else {
+				status = "N/A"
+			}
 		}
-		table.Append([]string{key, summary})
+		table.Append([]string{key, summary, status})
 	}
 
 	table.Render()
