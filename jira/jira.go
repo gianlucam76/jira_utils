@@ -156,15 +156,23 @@ func GetJiraActiveSprint(ctx context.Context, jiraClient *jira.Client, boardID s
 		return nil, err
 	}
 
+	var activeSprint *jira.Sprint
 	now := time.Now()
 	for i := range sprints {
-		if sprints[i].StartDate != nil && sprints[i].EndDate != nil &&
-			sprints[i].StartDate.Before(now) && sprints[i].EndDate.After(now) {
-			return &sprints[i], nil
+		if sprints[i].StartDate != nil && sprints[i].EndDate != nil {
+			if sprints[i].StartDate.Before(now) && sprints[i].EndDate.After(now) {
+				return &sprints[i], nil
+			} else if sprints[i].StartDate.Before(now) {
+				if activeSprint == nil {
+					activeSprint = &sprints[i]
+				} else if sprints[i].EndDate.After(*activeSprint.EndDate) {
+					activeSprint = &sprints[i]
+				}
+			}
 		}
 	}
 
-	return nil, nil
+	return activeSprint, nil
 }
 
 // GetJiraSprints returns the specified sprint for passed in board

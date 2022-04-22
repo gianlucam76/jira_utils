@@ -96,5 +96,6 @@ Description:
 	} else {
 		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed)", username)
 	}
+
 	return jira.DisplayJiraIssues(ctx, jiraClient, jql, logger)
 }
