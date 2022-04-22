@@ -17,9 +17,9 @@ func Sprints(ctx context.Context, args []string) error {
 	doc := `Usage:
 	jira-utils show sprints [--project=<name>] [--board=<name>]
 Options:
-  -h --help             Show this screen.
-     --project			Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
-     --board			Show Jira issues in current project/boardf (value in JIRA_BOARD will be used by default)
+  -h --help       Show this screen.
+     --project    Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
+     --board      Show Jira issues in current project/board (value in JIRA_BOARD will be used by default)
 
 Description:
   The show sprints command shows information about jira issues.

@@ -16,8 +16,8 @@ func Show(ctx context.Context, args []string) error {
 	doc := `Usage:
 	jira-utils show <command> [<args>...]
 
-    assigned         show jira issues assigned to user.
-    filed            show jira issues filed by user.
+    assigned         show jira issues assigned to user
+    filed            show jira issues filed by user
     sprints          show all sprints.
 
 Options:
