@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"jira_utils/jira"
+	"strconv"
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
@@ -13,14 +14,15 @@ import (
 // Assigned displays information about issues assigned to user (by default user defined in env variable JIRA_USERNAME)
 func Assigned(ctx context.Context, args []string) error {
 	doc := `Usage:
-	jira-utils show assigned [--sprint=<name>|--active] [--project=<name>] [--board=<name>] [--username=<name>]
+	jira-utils show assigned [--sprint=<name>|--active] [--project=<name>] [--board=<name>] [--username=<name>] [--warn-after=<days>]
 Options:
-  -h --help             Show this screen.
-     --active           Show Jira issues in current active sprint.
-     --username=<name>  Show Jira issues for specified user (by default user defined in env variable JIRA_USERNAME)
-     --sprint=<name>    Show Jira issues in current specified sprint.
-     --project=<name>	Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
-     --board=<name>     Show Jira issues in current project/board (value in JIRA_BOARD will be used by default)
+  -h --help               Show this screen.
+     --active             Show Jira issues in current active sprint.
+     --username=<name>    Show Jira issues for specified user (by default user defined in env variable JIRA_USERNAME)
+     --sprint=<name>      Show Jira issues in current specified sprint.
+     --project=<name>	  Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
+     --board=<name>       Show Jira issues in current project/board (value in JIRA_BOARD will be used by default)
+     --warn-after=<days>  Highlights any issue ii progressing status for more than number of days specified.
 
 Description:
   The show assigned command shows information about jira issues assigned to user (by default user defined in env variable JIRA_USERNAME)
@@ -79,6 +81,14 @@ Description:
 		sprintName = passedSprint.(string)
 	}
 
+	warnAfter := 0
+	if passedWarnAfter := parsedArgs["--warn-after"]; passedWarnAfter != nil {
+		warnAfter, err = strconv.Atoi(passedWarnAfter.(string))
+		if err != nil {
+			return err
+		}
+	}
+
 	active := parsedArgs["--active"].(bool)
 	if active {
 		activeSprint, err := jira.GetJiraActiveSprint(ctx, jiraClient, fmt.Sprintf("%d", board.ID), logger)
@@ -96,5 +106,5 @@ Description:
 	} else {
 		jql = fmt.Sprintf("assignee = %s and Status NOT IN (Resolved,Closed)", username)
 	}
-	return jira.DisplayJiraIssues(ctx, jiraClient, jql, logger)
+	return jira.DisplayJiraIssues(ctx, jiraClient, jql, warnAfter, logger)
 }
