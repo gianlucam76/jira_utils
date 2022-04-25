@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/andygrunwald/go-jira"
+	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 )
@@ -239,10 +240,10 @@ func findExistingIssue(openIssues []jira.Issue, summary string) *jira.Issue {
 	return nil
 }
 
-func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, logger logr.Logger) error {
+func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, warnAfter int, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS"})
-	table.SetReflowDuringAutoWrap(false)
+	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS", "LAST UPDATE"})
+	table.SetAutoWrapText(false)
 	table.SetRowLine(true)
 
 	issues, err := getJiraIssues(ctx, jiraClient, jql, logger)
@@ -256,6 +257,10 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 
 	for i := range issues {
 		key := issues[i].Key
+		warning := false
+		if warnAfter != 0 && shouldWarn(jiraClient, &issues[i], warnAfter) {
+			warning = true
+		}
 		var summary, status string
 		if issues[i].Fields != nil {
 			summary = issues[i].Fields.Summary
@@ -265,9 +270,54 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 				status = "N/A"
 			}
 		}
-		table.Append([]string{key, summary, status})
+
+		lastUpdate := string([]byte(time.Time(issues[i].Fields.Updated).Format("\"2006-01-02\"")))
+
+		if warning {
+			table.Append([]string{color.New(color.FgRed).Sprintf(key),
+				color.New(color.FgRed).Sprintf(summary), color.New(color.FgRed).Sprintf(status),
+				color.New(color.FgRed).Sprintf(lastUpdate)})
+		} else {
+			table.Append([]string{key, summary, status, lastUpdate})
+		}
 	}
 
 	table.Render()
 	return nil
+}
+
+func shouldWarn(jiraClient *jira.Client, issue *jira.Issue, warnAfter int) bool {
+	var cIssue *jira.Issue
+	var err error
+	if issue.Fields.Status != nil &&
+		issue.Fields.Status.Name == "In Progress" {
+		cIssue, _, err = jiraClient.Sprint.GetIssue(issue.ID, &jira.GetQueryOptions{Expand: "changelog"})
+		if err != nil {
+			return false
+		}
+	} else {
+		return false
+	}
+
+	if cIssue.Changelog == nil {
+		return false
+	}
+
+	hours := time.Duration(-24 * warnAfter)
+
+	for i := range cIssue.Changelog.Histories {
+		history := cIssue.Changelog.Histories[i]
+		historyTime, err := history.CreatedTime()
+		if err != nil {
+			continue
+		}
+		for j := range history.Items {
+			logItem := history.Items[j]
+			if logItem.ToString == "In Progress" &&
+				historyTime.Before(time.Now().Add(-hours*time.Hour)) {
+				return true
+			}
+		}
+	}
+	return false
 }
