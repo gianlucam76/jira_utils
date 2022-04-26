@@ -16,8 +16,8 @@ func Show(ctx context.Context, args []string) error {
 	doc := `Usage:
 	jira-utils show <command> [<args>...]
 
-    assigned         show jira issues assigned to user
-    filed            show jira issues filed by user
+    issues           show jira issues.
+    filed            show jira issues filed by user.
     sprints          show all sprints.
 
 Options:
@@ -47,8 +47,8 @@ Description:
 	arguments := append([]string{"show", command}, opts["<args>"].([]string)...)
 
 	switch command {
-	case "assigned":
-		return show.Assigned(ctx, arguments)
+	case "issues":
+		return show.Issues(ctx, arguments)
 	case "filed":
 		return show.Filed(ctx, arguments)
 	case "sprints":

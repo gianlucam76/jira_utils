@@ -11,21 +11,22 @@ import (
 	"k8s.io/klog/v2/klogr"
 )
 
-// Assigned displays information about issues assigned to user (by default user defined in env variable JIRA_USERNAME)
-func Assigned(ctx context.Context, args []string) error {
+// Issues displays information about issues assigned to a user (by default user defined in env variable JIRA_USERNAME) or all users
+func Issues(ctx context.Context, args []string) error {
 	doc := `Usage:
-	jira-utils show assigned [--sprint=<name>|--active] [--project=<name>] [--board=<name>] [--username=<name>] [--warn-after=<days>]
+	jira-utils show issues [--sprint=<name>|--active] [--project=<name>] [--board=<name>] [--username=<name>|--all] [--warn-after=<days>]
 Options:
   -h --help               Show this screen.
      --active             Show Jira issues in current active sprint.
      --username=<name>    Show Jira issues for specified user (by default user defined in env variable JIRA_USERNAME)
+     --all                Show all Jira issues (no user filter)  
      --sprint=<name>      Show Jira issues in current specified sprint.
      --project=<name>	  Show Jira issues in current project (value in JIRA_PROJECT will be used by default)
      --board=<name>       Show Jira issues in current project/board (value in JIRA_BOARD will be used by default)
      --warn-after=<days>  Highlights any issue ii progressing status for more than number of days specified.
 
 Description:
-  The show assigned command shows information about jira issues assigned to user (by default user defined in env variable JIRA_USERNAME)
+  The show issues command shows information about jira issues assigned to user (by default user defined in env variable JIRA_USERNAME)
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -48,6 +49,8 @@ Description:
 	} else {
 		username = jira.GetUsername(logger)
 	}
+
+	all := parsedArgs["--all"].(bool)
 
 	jiraClient, err := jira.GetJiraClient(ctx, jira.GetUsername(logger), jira.GetPassword(logger), logger)
 	if err != nil {
@@ -95,16 +98,20 @@ Description:
 		if err != nil || activeSprint == nil {
 			return fmt.Errorf("failed to get jira active sprint")
 		}
-		jql = fmt.Sprintf("assignee = %s and Status NOT IN (Resolved,Closed) and sprint = %s",
-			username, activeSprint.Name)
+		jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and sprint = %s", activeSprint.Name)
 	} else if sprintName != "" {
 		sprint, err := jira.GetJiraSprint(ctx, jiraClient, fmt.Sprintf("%d", board.ID), sprintName, logger)
 		if err != nil || sprint == nil {
 			return fmt.Errorf("%s", fmt.Sprintf("failed to get jira sprint %s", sprintName))
 		}
-		jql = fmt.Sprintf("assignee = %s and Status NOT IN (Resolved,Closed) and sprint = %s", username, sprintName)
+		jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and sprint = %s", sprintName)
 	} else {
-		jql = fmt.Sprintf("assignee = %s and Status NOT IN (Resolved,Closed)", username)
+		jql = "Status NOT IN (Resolved,Closed)"
 	}
+
+	if !all {
+		jql += fmt.Sprintf(" and assignee = %s", username)
+	}
+
 	return jira.DisplayJiraIssues(ctx, jiraClient, jql, warnAfter, logger)
 }
