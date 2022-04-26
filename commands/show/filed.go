@@ -95,16 +95,15 @@ Description:
 		if err != nil || activeSprint == nil {
 			return fmt.Errorf("failed to get jira active sprint")
 		}
-		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed) and sprint = %s",
-			username, activeSprint.Name)
+		jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and sprint = %s and reporter = %s", activeSprint.Name, username)
 	} else if sprintName != "" {
 		sprint, err := jira.GetJiraSprint(ctx, jiraClient, fmt.Sprintf("%d", board.ID), sprintName, logger)
 		if err != nil || sprint == nil {
 			return fmt.Errorf("%s", fmt.Sprintf("failed to get jira sprint %s", sprintName))
 		}
-		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed) and sprint = %s", username, sprintName)
+		jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and sprint = %s and reporter = %s", sprintName, username)
 	} else {
-		jql = fmt.Sprintf("reporter = %s and Status NOT IN (Resolved,Closed)", username)
+		jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and reporter = %s", username)
 	}
 
 	return jira.DisplayJiraIssues(ctx, jiraClient, jql, warnAfter, logger)

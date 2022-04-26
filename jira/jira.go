@@ -242,7 +242,7 @@ func findExistingIssue(openIssues []jira.Issue, summary string) *jira.Issue {
 
 func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, warnAfter int, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS", "LAST UPDATE"})
+	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS", "LAST UPDATE", "ASSIGNEE"})
 	table.SetAutoWrapText(false)
 	table.SetRowLine(true)
 
@@ -261,7 +261,7 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 		if warnAfter != 0 && shouldWarn(jiraClient, &issues[i], warnAfter) {
 			warning = true
 		}
-		var summary, status string
+		var summary, status, username string
 		if issues[i].Fields != nil {
 			summary = issues[i].Fields.Summary
 			if issues[i].Fields.Status != nil {
@@ -269,16 +269,21 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 			} else {
 				status = "N/A"
 			}
+			if issues[i].Fields.Assignee != nil {
+				username = issues[i].Fields.Assignee.Name
+			}
 		}
 
-		lastUpdate := string([]byte(time.Time(issues[i].Fields.Updated).Format("\"2006-01-02\"")))
+		// lastUpdate := string([]byte(time.Time(issues[i].Fields.Updated).Format("\"2006-01-02T\"")))
+		lastUpdateTime := time.Time(issues[i].Fields.Updated)
+		lastUpdate := fmt.Sprintf("%d days", lastUpdateTime.Day())
 
 		if warning {
 			table.Append([]string{color.New(color.FgRed).Sprintf(key),
 				color.New(color.FgRed).Sprintf(summary), color.New(color.FgRed).Sprintf(status),
-				color.New(color.FgRed).Sprintf(lastUpdate)})
+				color.New(color.FgRed).Sprintf(lastUpdate), color.New(color.FgRed).Sprintf(username)})
 		} else {
-			table.Append([]string{key, summary, status, lastUpdate})
+			table.Append([]string{key, summary, status, lastUpdate, username})
 		}
 	}
 
