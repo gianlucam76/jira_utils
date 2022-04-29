@@ -19,6 +19,7 @@ func Show(ctx context.Context, args []string) error {
     issues           show jira issues.
     filed            show jira issues filed by user.
     sprints          show all sprints.
+    e2e              show all open issues filed for e2e.
 
 Options:
 	-h --help      Show this screen.
@@ -36,7 +37,7 @@ Description:
 	if err != nil {
 		if _, ok := err.(*docopt.UserError); ok {
 			fmt.Printf(
-				"Invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand.\n",
+				"Invalid option: 'jira-util %s'. Use flag '--help' to read about a specific subcommand.\n",
 				strings.Join(os.Args[1:], " "),
 			)
 		}
@@ -53,6 +54,8 @@ Description:
 		return show.Filed(ctx, arguments)
 	case "sprints":
 		return show.Sprints(ctx, arguments)
+	case "e2e":
+		return show.E2EIssues(ctx, arguments)
 	default:
 		fmt.Println(doc)
 	}

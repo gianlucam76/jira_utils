@@ -57,7 +57,7 @@ fmt goimports: $(GOIMPORTS) ## Format and adjust import modules.
 	$(GOIMPORTS) -local golang.cisco.com/cloudstack -w .
 
 .PHONY: build
-build: fmt ## Build bin/sveltosctl
+build: fmt ## Build bin/jira-util
 	go build -o $(BIN_DIR)/jira_utils main.go
 
 .PHONY: vet
