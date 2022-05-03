@@ -219,8 +219,8 @@ func GetJiraSprint(ctx context.Context, jiraClient *jira.Client, boardID, sprint
 	return nil, nil
 }
 
-// getJiraIssues finds all issues matching passed jql
-func getJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, logger logr.Logger) ([]jira.Issue, error) {
+// GetJiraIssues finds all issues matching passed jql
+func GetJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, logger logr.Logger) ([]jira.Issue, error) {
 	issues, _, err := jiraClient.Issue.SearchWithContext(ctx, jql, nil)
 	if err != nil {
 		logger.Info(fmt.Sprintf("Failed to get all issues matching jql:%s. Error: %v", jql, err))
@@ -230,23 +230,13 @@ func getJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, log
 	return issues, nil
 }
 
-// findExistingIssue finds if an already existing issue exists.
-func findExistingIssue(openIssues []jira.Issue, summary string) *jira.Issue {
-	for i := range openIssues {
-		if openIssues[i].Fields.Summary == summary {
-			return &openIssues[i]
-		}
-	}
-	return nil
-}
-
 func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, warnAfter int, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS", "LAST UPDATE", "ASSIGNEE"})
 	table.SetAutoWrapText(false)
 	table.SetRowLine(true)
 
-	issues, err := getJiraIssues(ctx, jiraClient, jql, logger)
+	issues, err := GetJiraIssues(ctx, jiraClient, jql, logger)
 	if err != nil {
 		return err
 	}
