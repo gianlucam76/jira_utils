@@ -3,12 +3,13 @@ package show
 import (
 	"context"
 	"fmt"
-	"jira_utils/jira"
 	"strconv"
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
 	"k8s.io/klog/v2/klogr"
+
+	"github.com/gianlucam76/jira_utils/jira"
 )
 
 // E2EIssues displays information about issues filed for e2e automatic tagging sanities

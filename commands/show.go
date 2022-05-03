@@ -8,7 +8,7 @@ import (
 
 	docopt "github.com/docopt/docopt-go"
 
-	"jira_utils/commands/show"
+	"github.com/gianlucam76/jira_utils/commands/show"
 )
 
 // Show takes keyword then calls subcommand.

@@ -3,13 +3,14 @@ package show
 import (
 	"context"
 	"fmt"
-	"jira_utils/jira"
 	"os"
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
 	"github.com/olekukonko/tablewriter"
 	"k8s.io/klog/v2/klogr"
+
+	"github.com/gianlucam76/jira_utils/jira"
 )
 
 // Sprints displays information about issues in a given sprint
