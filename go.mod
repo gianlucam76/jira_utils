@@ -1,4 +1,4 @@
-module jira_utils
+module github.com/gianlucam76/jira_utils
 
 go 1.17
 

@@ -3,12 +3,13 @@ package show
 import (
 	"context"
 	"fmt"
-	"jira_utils/jira"
 	"strconv"
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
 	"k8s.io/klog/v2/klogr"
+
+	"github.com/gianlucam76/jira_utils/jira"
 )
 
 // Filed displays information about issues filed by user (by default user defined in env variable JIRA_USERNAME)

@@ -11,8 +11,8 @@ import (
 
 	docopt "github.com/docopt/docopt-go"
 
-	"jira_utils/commands"
-	"jira_utils/jira"
+	"github.com/gianlucam76/jira_utils/commands"
+	"github.com/gianlucam76/jira_utils/jira"
 )
 
 func main() {
