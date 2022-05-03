@@ -11,7 +11,7 @@ import (
 func GetUsername(logger logr.Logger) string {
 	user, ok := os.LookupEnv(username)
 	if !ok {
-		logger.Info("Env variable %s supposed to contain username not found", username)
+		logger.Info(fmt.Sprintf("Env variable %s supposed to contain username not found", username))
 		panic(1)
 	}
 
