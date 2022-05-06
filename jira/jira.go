@@ -3,6 +3,7 @@ package jira
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -228,6 +229,70 @@ func GetJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, log
 	}
 
 	return issues, nil
+}
+
+// CreateIssue creates new issue of type bug which will be added to sprint
+// - Comments will contain buildEnvironment (VCS vs UCS), run ID, failure message and full stack trace
+// - Assignee is the user the bug will be assigned to
+// - Reporter is the issue reporter
+// Return the issue Key or empty an error occurred.
+func CreateIssue(ctx context.Context, jiraClient *jira.Client, sprint *jira.Sprint, priority *jira.Priority,
+	projectKey, componentName, assignee, runID, buildEnvironment, testName, summary, maintainer string,
+	logger logr.Logger) string {
+	component := jira.Component{Name: componentName}
+
+	i := jira.Issue{
+		Fields: &jira.IssueFields{
+			Assignee: &jira.User{
+				Name: assignee,
+			},
+			Description: fmt.Sprintf("Test %s failed", testName),
+			Type: jira.IssueType{
+				Name: "Bug",
+			},
+			Project: jira.Project{
+				Key: projectKey,
+			},
+			Components: []*jira.Component{
+				&component,
+			},
+			Summary:  summary,
+			Priority: priority,
+		},
+	}
+
+	issue, resp, err := jiraClient.Issue.CreateWithContext(ctx, &i)
+	if err != nil {
+		body, _ := io.ReadAll(resp.Body)
+		logger.Info(fmt.Sprintf("Failed to create issue. Error: %v. Resp %s", err, string(body)))
+		return ""
+	}
+
+	logger.Info(fmt.Sprintf("Created issue %s", issue.Key))
+
+	return issue.Key
+}
+
+// AddCommentToIssue append comment to current open issue while also resetting sprint and priority.
+func AddCommentToIssue(ctx context.Context, jiraClient *jira.Client, issueID string,
+	commentMsg string, logger logr.Logger) {
+	comment := jira.Comment{
+		Body: commentMsg,
+	}
+
+	if _, resp, err := jiraClient.Issue.AddCommentWithContext(ctx, issueID, &comment); err != nil {
+		body, _ := io.ReadAll(resp.Body)
+		logger.Info(fmt.Sprintf("Failed to update issue %s. Error: %v. Resp %s", issueID, err, string(body)))
+		return
+	}
+}
+
+func MoveIssueToSprint(ctx context.Context, jiraClient *jira.Client, sprintID int, issueID string, logger logr.Logger) {
+	if resp, err := jiraClient.Sprint.MoveIssuesToSprintWithContext(ctx, sprintID, []string{issueID}); err != nil {
+		body, _ := io.ReadAll(resp.Body)
+		logger.Info(fmt.Sprintf("Failed to update issue %s. Error: %v. Resp %s", issueID, err, string(body)))
+		return
+	}
 }
 
 func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, warnAfter int, logger logr.Logger) error {
