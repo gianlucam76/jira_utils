@@ -237,7 +237,7 @@ func GetJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, log
 // - Reporter is the issue reporter
 // Return the issue Key or empty an error occurred.
 func CreateIssue(ctx context.Context, jiraClient *jira.Client, sprint *jira.Sprint, priority *jira.Priority,
-	projectKey, componentName, assignee, runID, buildEnvironment, testName, summary, maintainer string,
+	projectKey, componentName, assignee, testName, summary string,
 	logger logr.Logger) string {
 	component := jira.Component{Name: componentName}
 
