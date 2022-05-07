@@ -299,6 +299,63 @@ func MoveIssueToSprint(ctx context.Context, jiraClient *jira.Client, sprintID in
 	return nil
 }
 
+// ResolveIssue moves issues to resolved.
+// Known initial transition state are: scope; designed; start progress; planned; resolved; close
+func ResolveIssue(ctx context.Context, jiraClient *jira.Client, issue *jira.Issue, logger logr.Logger) error {
+	// 761 scope; 771 designed; 4 start progress; 711 planned; 5 resolved; 2 closed
+
+	transitionMap := make(map[string][]string)
+
+	// scope -> designed -> planned -> start progress -> resolved
+	transitionMap["761"] = []string{"761", "771", "711", "4", "5"}
+	// designed -> planned -> start progress -> resolved
+	transitionMap["771"] = []string{"771", "711", "4", "5"}
+	// planned -> start progress -> resolved
+	transitionMap["711"] = []string{"711", "4", "5"}
+	// start progress -> resolved
+	transitionMap["4"] = []string{"4", "5"}
+	// resolved
+	transitionMap["5"] = []string{"5"}
+
+	// Get current available transitions
+	currentTransitions, _, err := jiraClient.Issue.GetTransitions(issue.ID)
+	if err != nil {
+		logger.Info(fmt.Sprintf("Failed to get transition for issue %s. Err: %v", issue.ID, err))
+		return err
+	}
+
+	found := false
+	var transitions []string
+	for _, ct := range currentTransitions {
+		if v, ok := transitionMap[ct.ID]; ok {
+			transitions = v
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		msg := "Non of the current available transition is known"
+		logger.Info(msg)
+		return fmt.Errorf("%s", msg)
+	}
+
+	q := &jira.GetQueryOptions{}
+	for _, t := range transitions {
+		tmpIssue, _, err := jiraClient.Issue.Get(issue.ID, q)
+		if err != nil {
+			logger.Info(fmt.Sprintf("Failed to get issue %s. Err: %v", issue.ID, err))
+			return err
+		}
+		if _, err = jiraClient.Issue.DoTransitionWithContext(ctx, tmpIssue.ID, t); err != nil {
+			logger.Info(fmt.Sprintf("Failed to move to transition %s for issue %s. Err: %v", t, issue.ID, err))
+			return err
+		}
+	}
+
+	return nil
+}
+
 func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, warnAfter int, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"KEY", "SUMMARY", "STATUS", "LAST UPDATE", "ASSIGNEE"})
