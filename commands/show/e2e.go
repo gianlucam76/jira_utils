@@ -67,7 +67,7 @@ Description:
 		}
 	}
 
-	jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and reporter = %s", username)
+	jql = fmt.Sprintf("Status NOT IN (Resolved,Closed) and reporter = %s and project = %s", username, project.Name)
 
 	return jira.DisplayJiraIssues(ctx, jiraClient, jql, warnAfter, logger)
 }
