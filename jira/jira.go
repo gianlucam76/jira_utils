@@ -392,7 +392,8 @@ func DisplayJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string,
 
 		// lastUpdate := string([]byte(time.Time(issues[i].Fields.Updated).Format("\"2006-01-02T\"")))
 		lastUpdateTime := time.Time(issues[i].Fields.Updated)
-		lastUpdate := fmt.Sprintf("%d days", lastUpdateTime.Day())
+		diff := time.Since(lastUpdateTime)
+		lastUpdate := fmt.Sprintf("%d days", int(diff.Hours()/24))
 
 		if warning {
 			table.Append([]string{color.New(color.FgRed).Sprintf(key),
