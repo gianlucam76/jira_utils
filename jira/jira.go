@@ -238,7 +238,7 @@ func GetJiraIssues(ctx context.Context, jiraClient *jira.Client, jql string, log
 // Return the issue Key or empty an error occurred.
 func CreateIssue(ctx context.Context, jiraClient *jira.Client, sprint *jira.Sprint, priority *jira.Priority,
 	projectKey, componentName, assignee, testName, summary string,
-	logger logr.Logger) (string, error) {
+	logger logr.Logger) (*jira.Issue, error) {
 	component := jira.Component{Name: componentName}
 
 	i := jira.Issue{
@@ -265,12 +265,12 @@ func CreateIssue(ctx context.Context, jiraClient *jira.Client, sprint *jira.Spri
 	if err != nil {
 		body, _ := io.ReadAll(resp.Body)
 		logger.Info(fmt.Sprintf("Failed to create issue. Error: %v. Resp %s", err, string(body)))
-		return "", err
+		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("Created issue %s", issue.Key))
 
-	return issue.Key, nil
+	return issue, nil
 }
 
 // AddCommentToIssue append comment to current open issue while also resetting sprint and priority.
